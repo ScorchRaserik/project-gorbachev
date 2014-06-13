@@ -11,8 +11,8 @@
     <script type="text/javascript" src="js/phaser.min.js"></script>
     <script type="text/javascript" src="js/Preload.js"></script>
     <script type="text/javascript" src="js/Intro.js"></script>
-    <!-- <script type="text/javascript" src="js/Main.js"></script>
-    <script type="text/javascript" src="js/GameOver.js"></script> -->
+    <script type="text/javascript" src="js/Main.js"></script>
+    <!-- <script type="text/javascript" src="js/GameOver.js"></script> -->
 </head>
 <body>
 <script type="text/javascript">
@@ -21,7 +21,7 @@
 	var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game');
     game.state.add('Preload', WNDR.Preload);
 	game.state.add('Intro', WNDR.Intro);
-	//game.state.add('Main', WNDR.Main);
+	game.state.add('Main', WNDR.Main);
     //game.state.add('GameOver', WNDR.Fail);
 	game.state.start('Preload');
 })();
