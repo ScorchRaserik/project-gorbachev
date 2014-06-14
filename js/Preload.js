@@ -10,6 +10,7 @@ WNDR.Preload.prototype = {
 		this.load.image('test', 'assets/test.png');
 		this.load.image('ground', 'assets/ground.png');
 		this.load.image('player', 'assets/player.png');
+		this.load.image('rifleShot', 'assets/rifleShot.png');
 		this.load.spritesheet('button', 'assets/button.png', 200, 50);
 	},
 
