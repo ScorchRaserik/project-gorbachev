@@ -2,6 +2,9 @@ WNDR.Main = function(game) {
 	PLAYER_SCALE = 1.0;
 	PLAYER_SPAWN_X = 226;
 	PLAYER_SPAWN_Y = 700;
+	nextFire = 0;
+	fireRate = 100;
+	shotDirection = 'right';
 };
 
 WNDR.Main.prototype = {
@@ -34,11 +37,22 @@ WNDR.Main.prototype = {
     	//player.animations.add('turn', [4], 20, true);
     	//player.animations.add('right', [5, 6, 7, 8], 10, true);
 
+    	//Set up player bullets
+	    bullets = this.game.add.group();
+	    bullets.enableBody = true;
+	    bullets.physicsBodyType = Phaser.Physics.ARCADE;
+	    bullets.createMultiple(30, 'rifleShot', 0, false);
+	    bullets.setAll('anchor.x', 0.5);
+	    bullets.setAll('anchor.y', 0.5);
+	    bullets.setAll('outOfBoundsKill', true);
+	    bullets.setAll('checkWorldBounds', true);
+
     	//Controls
 		wUp = this.game.input.keyboard.addKey(Phaser.Keyboard.W);
 		aLeft = this.game.input.keyboard.addKey(Phaser.Keyboard.A);
 		sDown = this.game.input.keyboard.addKey(Phaser.Keyboard.S);
 		dRight = this.game.input.keyboard.addKey(Phaser.Keyboard.D);
+		space = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 	},
 
 	update: function() {
@@ -53,6 +67,7 @@ WNDR.Main.prototype = {
 		if(aLeft.isDown)
 		{
 	    	//player.animations.play('left');
+	    	shotDirection = 'left';
 	    	//Move to the left
 	    	if(player.body.velocity <= 0)
 	        {
@@ -66,6 +81,7 @@ WNDR.Main.prototype = {
 	    else if(dRight.isDown)
 	    {
 	    	//player.animations.play('right');
+	    	shotDirection = 'right';
 	        //Move to the right
 	        if(player.body.velocity >= 0)
 	        {
@@ -114,5 +130,30 @@ WNDR.Main.prototype = {
 		{
 			player.body.drag.x = 2100 * PLAYER_SCALE;
 		}
+
+
+		//***************
+		//PLAYER WEAPONRY
+		//***************
+
+		//basic shoot
+		space.onDown.add(this.fire, this);
+	},
+
+	fire: function() {
+		if (this.game.time.now > nextFire && bullets.countDead() > 0)
+	    {
+	        nextFire = this.game.time.now + fireRate;
+	        bullet = bullets.getFirstExists(false);
+	        bullet.reset(player.x, player.y);
+	        if(shotDirection == 'left')
+	        {
+	        	bullet.body.velocity.x = -600;
+	        }
+	        else if(shotDirection == 'right')
+		    {
+		    	bullet.body.velocity.x = 600;
+		    }
+	    }
 	}
 };
