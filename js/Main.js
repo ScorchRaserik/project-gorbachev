@@ -5,6 +5,7 @@ WNDR.Main = function(game) {
 	nextFire = 0;
 	fireRate = 100;
 	shotDirection = 'right';
+	isIndoors = false;
 };
 
 WNDR.Main.prototype = {
@@ -14,11 +15,22 @@ WNDR.Main.prototype = {
 		this.game.physics.startSystem(Phaser.Physics.ARCADE);
 		this.game.world.setBounds(0, 0, 2200, 0);
 
+		house1 = this.add.sprite(100, 155, 'house', 0);
+		house2 = this.add.sprite(525, 155, 'house', 0);
+
 		//Set up environment
 		platforms = this.game.add.group();
 		platforms.enableBody = true;
 		ground = platforms.create(100, this.game.world.height - 45, 'ground');
 		ground.body.immovable = true;
+
+		//The Doors
+		doors = this.game.add.group();
+		doors.enableBody = true;
+		door1 = doors.create(150, ground.y - 75, 'door');
+		door2 = doors.create(300, ground.y - 75, 'door');
+		door3 = doors.create(600, ground.y - 75, 'door');
+		doors.setAll('body.immovable', true);
 
 		//Set up player
 		player = this.add.sprite(226, this.game.world.height - 75, 'player');
@@ -48,6 +60,7 @@ WNDR.Main.prototype = {
 	    bullets.setAll('checkWorldBounds', true);
 
     	//Controls
+    	arrow = this.game.input.keyboard.createCursorKeys();
 		wUp = this.game.input.keyboard.addKey(Phaser.Keyboard.W);
 		aLeft = this.game.input.keyboard.addKey(Phaser.Keyboard.A);
 		sDown = this.game.input.keyboard.addKey(Phaser.Keyboard.S);
@@ -58,6 +71,8 @@ WNDR.Main.prototype = {
 	update: function() {
 		//Collision detection
 		this.game.physics.arcade.collide(player, platforms);
+		this.game.physics.arcade.overlap(player, doors, this.enterDoor, null, this);
+
 
 		//***************
 		//PLAYER MOVEMENT
@@ -138,6 +153,17 @@ WNDR.Main.prototype = {
 
 		//basic shoot
 		space.onDown.add(this.fire, this);
+
+
+
+		//***************
+		//PLAYER ABILITES
+		//***************
+		if(arrow.down.isUp)
+		{
+			canUseDoor = true;
+		}
+
 	},
 
 	fire: function() {
@@ -148,12 +174,87 @@ WNDR.Main.prototype = {
 	        bullet.reset(player.x, player.y);
 	        if(shotDirection == 'left')
 	        {
-	        	bullet.body.velocity.x = -600;
+	        	if(arrow.up.isDown)
+	        	{
+	        		bullet.rotation = this.game.physics.arcade.moveToXY(bullet, player.x - 10, player.y - 10, 600);
+	        	}
+	        	else
+	        	{
+	        		bullet.angle = 0;
+		        	bullet.body.velocity.x = -600;
+		        }
 	        }
 	        else if(shotDirection == 'right')
 		    {
-		    	bullet.body.velocity.x = 600;
+		    	if(arrow.up.isDown)
+	        	{
+	        		bullet.rotation = this.game.physics.arcade.moveToXY(bullet, player.x + 10, player.y - 10, 600);
+	        	}
+	        	else
+	        	{
+	        		bullet.angle = 0;
+		        	bullet.body.velocity.x = 600;
+		        }
 		    }
 	    }
+	},
+
+	enterDoor: function(player, door){
+		if(arrow.down.isDown && canUseDoor == true)
+		{
+			canUseDoor = false;
+
+			//House 1
+			if((door.x == door1.x && door.y == door1.y) || (door.x == door2.x && door.y == door2.y))
+			{
+				if(isIndoors == false)
+				{
+					isIndoors = true;
+					leftWall = platforms.create(house1.x, house1.y, 'housewall');
+					rightWall = platforms.create(house1.x + 375, house1.y, 'housewall');
+					ceiling = platforms.create(house1.x, house1.y, 'houseroof');
+					ledge1 = platforms.create(house1.x + 50, house1.y + 175, 'indoorledge');
+					ledge2 = platforms.create(house1.x + 175, house1.y + 300, 'indoorledge');
+					platforms.setAll('body.immovable', true);
+					house1.frame = 1;
+					isIndoors = true;
+				}
+				else
+				{
+					leftWall.destroy();
+					rightWall.destroy();
+					ceiling.destroy();
+					ledge1.destroy();
+					ledge2.destroy();
+					house1.frame = 0;
+					isIndoors = false;
+				}
+			}
+
+			//House 2
+			if(door.x == door3.x && door.y == door3.y)
+			{
+				if(isIndoors == false)
+				{
+					isIndoors = true;
+					leftWall = platforms.create(house2.x, house1.y, 'housewall');
+					rightWall = platforms.create(house2.x + 375, house2.y, 'housewall');
+					ceiling = platforms.create(house2.x, house2.y, 'houseroof');
+					ledge1 = platforms.create(house2.x + 175, house2.y + 350, 'indoorledge');
+					platforms.setAll('body.immovable', true);
+					house2.frame = 1;
+					isIndoors = true;
+				}
+				else
+				{
+					leftWall.destroy();
+					rightWall.destroy();
+					ceiling.destroy();
+					ledge1.destroy();
+					house2.frame = 0;
+					isIndoors = false;
+				}
+			}
+		}
 	}
 };
