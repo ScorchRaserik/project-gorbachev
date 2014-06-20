@@ -5,7 +5,10 @@ WNDR.Main = function(game) {
 	nextFire = 0;
 	fireRate = 100;
 	shotDirection = 'right';
+	reverseShot = false;
 	isIndoors = false;
+	isOnLedge = false;
+	currentPlatHeight = null;
 };
 
 WNDR.Main.prototype = {
@@ -13,27 +16,36 @@ WNDR.Main.prototype = {
 	create: function() {
 		//Physics setup
 		this.game.physics.startSystem(Phaser.Physics.ARCADE);
-		this.game.world.setBounds(0, 0, 2200, 0);
+		this.game.world.setBounds(0, 0, 5300, 1200);
 
-		house1 = this.add.sprite(100, 155, 'house', 0);
-		house2 = this.add.sprite(525, 155, 'house', 0);
+		house1 = this.add.sprite(100, 700, 'house', 0);
 
 		//Set up environment
 		platforms = this.game.add.group();
 		platforms.enableBody = true;
-		ground = platforms.create(100, this.game.world.height - 45, 'ground');
-		ground.body.immovable = true;
+		p1 = platforms.create(0, 1100, 'ground');
+		p1.scale.setTo(8, 1);
+		p2 = platforms.create(400, 1050, 'ground');
+		p2.scale.setTo(4, 2);
+		p3 = platforms.create(600, 950, 'ground');
+		p3.scale.setTo(4, 4);
+		p4 = platforms.create(800, 800, 'ground');
+		p4.scale.setTo(4, 7);
+		p5 = platforms.create(1000, 1000, 'ground');
+		p5.scale.setTo(8, 3);
+		p6 = platforms.create(1400, 800, 'ground');
+		p6.scale.setTo(6, 7);
+		platforms.setAll('body.immovable', true);
 
 		//The Doors
 		doors = this.game.add.group();
 		doors.enableBody = true;
-		door1 = doors.create(150, ground.y - 75, 'door');
-		door2 = doors.create(300, ground.y - 75, 'door');
-		door3 = doors.create(600, ground.y - 75, 'door');
+		door1 = doors.create(150, p1.y - 75, 'door');
+		door2 = doors.create(300, p1.y - 75, 'door');
 		doors.setAll('body.immovable', true);
 
 		//Set up player
-		player = this.add.sprite(226, this.game.world.height - 75, 'player');
+		player = this.add.sprite(150, this.game.world.height - 150, 'player');
 		player.anchor.setTo(0.5, 0.5);
 		this.game.physics.arcade.enable(player);
 		this.game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
@@ -70,8 +82,9 @@ WNDR.Main.prototype = {
 
 	update: function() {
 		//Collision detection
-		this.game.physics.arcade.collide(player, platforms);
+		this.game.physics.arcade.collide(player, platforms, this.checkPlatform, null, this);
 		this.game.physics.arcade.overlap(player, doors, this.enterDoor, null, this);
+		this.game.physics.arcade.overlap(platforms, bullets, this.killBullet, null, this);
 
 
 		//***************
@@ -82,7 +95,14 @@ WNDR.Main.prototype = {
 		if(aLeft.isDown)
 		{
 	    	//player.animations.play('left');
-	    	shotDirection = 'left';
+	    	if(reverseShot == true)
+	    	{
+	    		shotDirection = 'right';
+	    	}
+	    	else
+	    	{
+	    		shotDirection = 'left';
+	    	}
 	    	//Move to the left
 	    	if(player.body.velocity <= 0)
 	        {
@@ -96,7 +116,14 @@ WNDR.Main.prototype = {
 	    else if(dRight.isDown)
 	    {
 	    	//player.animations.play('right');
-	    	shotDirection = 'right';
+	    	if(reverseShot == true)
+	    	{
+	    		shotDirection = 'left';
+	    	}
+	    	else
+	    	{
+	    		shotDirection = 'right';
+	    	}
 	        //Move to the right
 	        if(player.body.velocity >= 0)
 	        {
@@ -120,6 +147,7 @@ WNDR.Main.prototype = {
 	    	player.body.velocity.y = -1000 * PLAYER_SCALE;
 	    	player.body.gravity.y = 500 * PLAYER_SCALE;
 	    	canJump = false;
+	    	isOnLedge = false;
 	    }
 
 	    if(wUp.justReleased(100) || (!player.body.touching.down && player.body.velocity.y == 0))
@@ -127,13 +155,41 @@ WNDR.Main.prototype = {
 	    	player.body.gravity.y = 5000 * PLAYER_SCALE;
 	    }
 
-	    if(player.body.touching.down && wUp.isUp)
+	    if((player.body.touching.down || isOnLedge == true) && wUp.isUp)
 		{
 			canJump = true;
 		}
 		else
 		{
 			canJump = false;
+		}
+
+		//Ledge Grab
+		if(player.body.velocity.y >= 0)
+		{
+			if(((player.body.y + 5) >= currentPlatHeight && (player.body.y - 5) <= currentPlatHeight) && (player.body.touching.left || player.body.touching.right))
+			{
+				isOnLedge = true;
+			}
+			else
+			{
+				//isOnLedge = false;
+			}
+		}
+
+		if(isOnLedge)
+		{
+			player.body.velocity.y = 0;
+			player.body.gravity.y = 0;
+			reverseShot = true;
+			if(aLeft.isDown || sDown.isDown || dRight.isDown)
+			{
+				isOnLedge = false;
+			}
+		}
+		else
+		{
+			reverseShot = false;
 		}
 
 		//Airborn sideways movement affected
@@ -163,7 +219,10 @@ WNDR.Main.prototype = {
 		{
 			canUseDoor = true;
 		}
+	},
 
+	checkPlatform: function(player, platform){
+		currentPlatHeight = platform.body.y;
 	},
 
 	fire: function() {
@@ -199,6 +258,10 @@ WNDR.Main.prototype = {
 	    }
 	},
 
+	killBullet: function(platform, bullet) {
+		bullet.kill();
+	},
+
 	enterDoor: function(player, door){
 		if(arrow.down.isDown && canUseDoor == true)
 		{
@@ -230,31 +293,10 @@ WNDR.Main.prototype = {
 					isIndoors = false;
 				}
 			}
-
-			//House 2
-			if(door.x == door3.x && door.y == door3.y)
-			{
-				if(isIndoors == false)
-				{
-					isIndoors = true;
-					leftWall = platforms.create(house2.x, house1.y, 'housewall');
-					rightWall = platforms.create(house2.x + 375, house2.y, 'housewall');
-					ceiling = platforms.create(house2.x, house2.y, 'houseroof');
-					ledge1 = platforms.create(house2.x + 175, house2.y + 350, 'indoorledge');
-					platforms.setAll('body.immovable', true);
-					house2.frame = 1;
-					isIndoors = true;
-				}
-				else
-				{
-					leftWall.destroy();
-					rightWall.destroy();
-					ceiling.destroy();
-					ledge1.destroy();
-					house2.frame = 0;
-					isIndoors = false;
-				}
-			}
 		}
+	},
+
+	render: function() { 
+		this.game.debug.text('Collide: ' + currentPlatHeight + ' Player: ' + player.body.y + ' Trigger: ' + isOnLedge, 100,550);
 	}
 };
